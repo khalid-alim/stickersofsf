@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SF Stickers</title>
+    <style>
+        body {
+            font-family: "Times New Roman", serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.4;
+            background: white;
+            color: black;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            font-weight: normal;
+        }
+        
+        .upload {
+            border: 1px solid black;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            cursor: pointer;
+        }
+        
+        .upload:hover {
+            background: #f5f5f5;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        input[type="text"] {
+            width: 200px;
+            padding: 5px;
+            border: 1px solid black;
+            margin: 5px;
+            font-family: "Times New Roman", serif;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: 1px solid black;
+            background: white;
+            cursor: pointer;
+            font-family: "Times New Roman", serif;
+        }
+        
+        button:hover {
+            background: black;
+            color: white;
+        }
+        
+        .stickers {
+            margin-top: 40px;
+        }
+        
+        .sticker {
+            margin: 20px 0;
+            padding: 20px 0;
+            border-bottom: 1px solid #ccc;
+        }
+        
+        .sticker img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 10px 0;
+        }
+        
+        .location {
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>San Francisco Sticker Archive</h1>
+    
+    <p>Document stickers found around the city.</p>
+    
+    <div class="upload" onclick="document.getElementById('fileInput').click()">
+        Click to upload image
+        <input type="file" id="fileInput" accept="image/*" multiple>
+    </div>
+    
+    <div>
+        <input type="text" id="locationInput" placeholder="Location (optional)">
+        <button onclick="uploadCurrentFiles()">Upload</button>
+    </div>
+    
+    <div class="loading" id="loading" style="display: none;">Uploading...</div>
+    
+    <div class="stickers" id="stickerGallery">
+        <div class="loading">Loading stickers...</div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const supabaseUrl = 'https://aifbugdoafvywupdvqbl.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpZmJ1Z2RvYWZ2eXd1cGR2cWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MTM4ODAsImV4cCI6MjA3MTk4OTg4MH0.U4iGfgbQ6tLpWJUVRMls14cJjI3iJjbVE7smiCFAMck';
+        
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        let selectedFiles = [];
+        
+        // File selection
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            selectedFiles = Array.from(e.target.files);
+        });
+        
+        // Upload function
+        window.uploadCurrentFiles = async function() {
+            if (selectedFiles.length === 0) {
+                alert('Please select files first');
+                return;
+            }
+            
+            const location = document.getElementById('locationInput').value || 'Location not specified';
+            document.getElementById('loading').style.display = 'block';
+            
+            for (const file of selectedFiles) {
+                try {
+                    // Upload image to Supabase Storage
+                    const fileName = `${Date.now()}_${file.name}`;
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('stickers')
+                        .upload(fileName, file);
+                    
+                    if (uploadError) throw uploadError;
+                    
+                    // Get public URL
+                    const { data: urlData } = supabase.storage
+                        .from('stickers')
+                        .getPublicUrl(fileName);
+                    
+                    // Save metadata to database
+                    const { error: dbError } = await supabase
+                        .from('sticker_posts')
+                        .insert({
+                            image_url: urlData.publicUrl,
+                            location: location,
+                            created_at: new Date().toISOString(),
+                            date: new Date().toLocaleDateString()
+                        });
+                    
+                    if (dbError) throw dbError;
+                    
+                } catch (error) {
+                    console.error('Upload failed:', error);
+                    alert('Upload failed: ' + error.message);
+                }
+            }
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('locationInput').value = '';
+            selectedFiles = [];
+            document.getElementById('fileInput').value = '';
+            loadStickers();
+        };
+        
+        // Load all stickers
+        async function loadStickers() {
+            try {
+                const { data: stickers, error } = await supabase
+                    .from('sticker_posts')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                const gallery = document.getElementById('stickerGallery');
+                gallery.innerHTML = '';
+                
+                if (stickers.length === 0) {
+                    gallery.innerHTML = '<div class="loading">No stickers yet. Be the first to upload!</div>';
+                    return;
+                }
+                
+                stickers.forEach(sticker => {
+                    const stickerDiv = document.createElement('div');
+                    stickerDiv.className = 'sticker';
+                    stickerDiv.innerHTML = `
+                        <img src="${sticker.image_url}" alt="Sticker">
+                        <div class="location">
+                            ${sticker.location}
+                            <br>
+                            ${sticker.date}
+                        </div>
+                    `;
+                    gallery.appendChild(stickerDiv);
+                });
+                
+            } catch (error) {
+                console.error('Error loading stickers:', error);
+                document.getElementById('stickerGallery').innerHTML = '<div class="loading">Error loading stickers.</div>';
+            }
+        }
+        
+        // Drag and drop
+        const uploadArea = document.querySelector('.upload');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = '#f0f0f0';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.background = 'white';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = 'white';
+            selectedFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            if (selectedFiles.length > 0) {
+                alert(`${selectedFiles.length} file(s) selected. Add location and click Upload.`);
+            }
+        });
+        
+        // Load stickers on page load
+        loadStickers();
+    </script>
+</body>
+</html>
