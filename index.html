@@ -100,9 +100,9 @@
     <div class="header">
         <h1>Street Anthropology</h1>
         <div class="metadata" id="metadata">
-            Archive running: --d --h --m<br>
-            147 specimens collected<br>
-            Last: 23m ago, Mission
+            Archive uptime: --d --h --m<br>
+            -- entries logged<br>
+            Last update: --m ago, --
         </div>
     </div>
     
@@ -136,7 +136,7 @@
         const supabase = createClient(supabaseUrl, supabaseKey);
         
         // Track when the archive started
-        const archiveStartTime = new Date('2024-08-25T10:00:00'); // Replace with actual start date
+        const archiveStartTime = new Date('2025-08-28T21:00:00'); // August 28th, 2025 9:00 PM
         
         // Update metadata in real-time
         function updateMetadata(totalCount = null, lastUpload = null) {
@@ -147,21 +147,21 @@
             const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
             
-            let metadataHTML = `Archive running: ${days}d ${hours}h ${minutes}m<br>`;
+            let metadataHTML = `Archive uptime: ${days}d ${hours}h ${minutes}m<br>`;
             
             if (totalCount !== null) {
-                metadataHTML += `${totalCount} specimens collected<br>`;
+                metadataHTML += `${totalCount} entries logged<br>`;
             } else {
-                metadataHTML += `-- specimens collected<br>`;
+                metadataHTML += `-- entries logged<br>`;
             }
             
             if (lastUpload) {
                 const uploadTime = new Date(lastUpload.created_at);
                 const timeSinceUpload = Math.floor((now - uploadTime) / (1000 * 60));
                 const location = lastUpload.location.split(',')[0]; // Just neighborhood part
-                metadataHTML += `Last: ${timeSinceUpload}m ago, ${location}`;
+                metadataHTML += `Last update: ${timeSinceUpload}m ago, ${location}`;
             } else {
-                metadataHTML += `Last: --m ago, --`;
+                metadataHTML += `Last update: --m ago, --`;
             }
             
             document.getElementById('metadata').innerHTML = metadataHTML;
