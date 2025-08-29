@@ -166,6 +166,63 @@
             opacity: 1;
         }
 
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            position: relative;
+            background: white;
+            border: 2px solid #333;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-image {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .modal-info {
+            padding: 20px;
+            font-family: "Consolas", monospace;
+            font-size: 14px;
+            background: #f8f8f8;
+            border-top: 1px solid #ddd;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-family: "Consolas", monospace;
+            font-size: 16px;
+        }
+
         .item-location {
             font-weight: bold;
         }
@@ -239,6 +296,15 @@
 
         <div class="masonry-container" id="masonryGallery">
             <div class="loading">Initializing archive...</div>
+        </div>
+    </div>
+
+    <!-- Modal for image viewing -->
+    <div class="modal" id="modal" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <img id="modalImage" class="modal-image" src="" alt="Street sticker">
+            <div class="modal-info" id="modalInfo"></div>
         </div>
     </div>
 
@@ -348,9 +414,9 @@
                                timeAgo < 1440 ? `${Math.floor(timeAgo/60)}h ${timeAgo % 60}m ago` : 
                                `${Math.floor(timeAgo/1440)}d ago`;
             
-            // Add click handler for full-size view
+            // Add click handler for modal view
             item.addEventListener('click', () => {
-                window.open(sticker.image_url, '_blank');
+                showModal(sticker, timeDisplay);
             });
             
             item.innerHTML = `
@@ -362,6 +428,30 @@
             `;
             
             return item;
+        }
+
+        // Show modal with image and metadata
+        function showModal(sticker, timeDisplay) {
+            const modal = document.getElementById('modal');
+            const modalImage = document.getElementById('modalImage');
+            const modalInfo = document.getElementById('modalInfo');
+            
+            modalImage.src = sticker.image_url;
+            modalInfo.innerHTML = `
+                <div><strong>Location:</strong> ${sticker.location}</div>
+                <div><strong>Documented:</strong> ${timeDisplay}</div>
+                <div><strong>Date:</strong> ${sticker.date}</div>
+            `;
+            
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
         }
 
         // Render masonry gallery
