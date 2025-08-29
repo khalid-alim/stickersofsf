@@ -5,30 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Street Anthropology</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: "Segoe UI", sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.4;
+            margin: 0;
+            padding: 0;
             background: white;
             color: black;
+            min-height: 100vh;
+        }
+        
+        .header {
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #eee;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
         }
         
         h1 {
             font-family: "Consolas", "Monaco", monospace;
-            font-size: 24px;
+            font-size: 28px;
             margin: 0;
             font-weight: normal;
             text-transform: uppercase;
             letter-spacing: 2px;
-        }
-        
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 20px;
         }
         
         .metadata {
@@ -38,95 +52,190 @@
             text-align: right;
             line-height: 1.3;
         }
-        
-        .upload {
-            border: 1px solid black;
-            padding: 20px;
-            margin: 20px 0;
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .upload-section {
             text-align: center;
-            cursor: pointer;
+            margin-bottom: 60px;
+        }
+
+        .prompt {
             font-family: "Consolas", "Monaco", monospace;
+            font-size: 16px;
+            margin-bottom: 30px;
+            color: #333;
+            letter-spacing: 0.5px;
         }
         
-        .upload:hover {
-            background: #f5f5f5;
+        .upload-zone {
+            border: 2px dashed #333;
+            padding: 60px 40px;
+            margin: 0 auto;
+            max-width: 500px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: "Consolas", "Monaco", monospace;
+            background: #fafafa;
         }
         
-        input[type="file"] {
-            display: none;
+        .upload-zone:hover {
+            background: #f0f0f0;
+            border-color: #000;
         }
-        
-        .stickers {
-            margin-top: 40px;
+
+        .upload-text {
+            font-size: 14px;
+            line-height: 1.4;
+            color: #666;
         }
-        
-        .sticker {
-            margin: 20px 0;
-            padding: 20px 0;
-            border-bottom: 1px solid #ccc;
+
+        .masonry-container {
+            column-count: 4;
+            column-gap: 20px;
+            column-fill: balance;
         }
-        
-        .sticker img {
-            max-width: 100%;
+
+        @media (max-width: 1000px) {
+            .masonry-container {
+                column-count: 3;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .masonry-container {
+                column-count: 2;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .masonry-container {
+                column-count: 1;
+            }
+        }
+
+        .masonry-item {
+            break-inside: avoid;
+            margin-bottom: 20px;
+            position: relative;
+            background: white;
+            border: 1px solid #ddd;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .masonry-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #333;
+        }
+
+        .masonry-item img {
+            width: 100%;
             height: auto;
             display: block;
-            margin: 10px 0;
         }
-        
-        .location {
-            font-size: 14px;
-            margin-top: 10px;
-            font-family: "Consolas", "Monaco", monospace;
+
+        .item-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-family: "Consolas", monospace;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
-        
+
+        .masonry-item:hover .item-overlay {
+            opacity: 1;
+        }
+
+        .item-location {
+            font-weight: bold;
+        }
+
+        .item-timestamp {
+            color: #ccc;
+            font-size: 11px;
+        }
+
         .loading {
             text-align: center;
-            padding: 20px;
+            padding: 60px 20px;
             font-style: italic;
-            font-family: "Consolas", "Monaco", monospace;
+            font-family: "Consolas", monospace;
+            color: #666;
         }
         
         .progress-bar {
             width: 100%;
-            height: 20px;
-            border: 1px solid black;
-            margin: 10px 0;
+            max-width: 500px;
+            height: 4px;
+            background: #eee;
+            margin: 20px auto;
             display: none;
+            overflow: hidden;
         }
         
         .progress-fill {
             height: 100%;
-            background: black;
+            background: #333;
             width: 0%;
             transition: width 0.3s ease;
+        }
+
+        input[type="file"] {
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Street Anthropology</h1>
-        <div class="metadata" id="metadata">
-            Archive uptime: --d --h --m --s<br>
-            Entries logged: --<br>
-            Last update: --m ago, --
+        <div class="header-content">
+            <h1>Street Anthropology</h1>
+            <div class="metadata" id="metadata">
+                Archive uptime: --d --h --m --s<br>
+                Entries logged: --<br>
+                Last update: --m ago, --
+            </div>
         </div>
     </div>
-    
-    <p>Document stickers found around the city.</p>
-    
-    <div class="upload" onclick="document.getElementById('fileInput').click()">
-        Click to upload
-        <input type="file" id="fileInput" accept="image/*" multiple>
-    </div>
-    
-    <div class="progress-bar" id="progressBar">
-        <div class="progress-fill" id="progressFill"></div>
-    </div>
-    
-    <div class="loading" id="loading" style="display: none;">Processing upload...</div>
-    
-    <div class="stickers" id="stickerGallery">
-        <div class="loading">Loading stickers...</div>
+
+    <div class="main-content">
+        <div class="upload-section">
+            <div class="prompt">Archive the ephemeral details of urban life</div>
+            
+            <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-text">
+                    DOCUMENT FINDINGS<br>
+                    Drop images here or click to browse<br>
+                    <span style="font-size: 12px; color: #999;">Phone photos while walking preferred</span>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" multiple>
+            </div>
+            
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            
+            <div class="loading" id="uploadLoading" style="display: none;">Processing documentation...</div>
+        </div>
+
+        <div class="masonry-container" id="masonryGallery">
+            <div class="loading">Initializing archive...</div>
+        </div>
     </div>
 
     <!-- EXIF library for GPS extraction -->
@@ -142,12 +251,14 @@
         const supabase = createClient(supabaseUrl, supabaseKey);
         
         // Track when the archive started - August 28th, 2025 at 9:00 PM
-        const archiveStartTime = new Date(2025, 7, 28, 21, 0, 0); // Month is 0-indexed
+        const archiveStartTime = new Date(2025, 7, 28, 21, 0, 0);
+        
+        let currentData = [];
         
         // Update metadata in real-time with seconds
         function updateMetadata(totalCount = null, lastUpload = null) {
             const now = new Date();
-            const timeDiff = now - archiveStartTime;
+            const timeDiff = Math.max(0, now - archiveStartTime);
             
             const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -165,7 +276,7 @@
             if (lastUpload) {
                 const uploadTime = new Date(lastUpload.created_at);
                 const timeSinceUpload = Math.floor((now - uploadTime) / (1000 * 60));
-                const location = lastUpload.location.split(',')[0]; // Just neighborhood part
+                const location = lastUpload.location.split(',')[0].trim();
                 metadataHTML += `Last update: ${timeSinceUpload}m ago, ${location}`;
             } else {
                 metadataHTML += `Last update: --m ago, --`;
@@ -175,7 +286,10 @@
         }
         
         // Update metadata every second for live feel
-        setInterval(() => updateMetadata(), 1000);
+        setInterval(() => {
+            const lastUpload = currentData.length > 0 ? currentData[0] : null;
+            updateMetadata(currentData.length, lastUpload);
+        }, 1000);
         
         // Extract GPS coordinates from image EXIF data
         function getGPSFromExif(file) {
@@ -187,7 +301,6 @@
                     const lonRef = EXIF.getTag(this, "GPSLongitudeRef");
                     
                     if (lat && lon && latRef && lonRef) {
-                        // Convert DMS to decimal degrees
                         const latDec = lat[0] + lat[1]/60 + lat[2]/3600;
                         const lonDec = lon[0] + lon[1]/60 + lon[2]/3600;
                         
@@ -209,8 +322,45 @@
                 const data = await response.json();
                 return `${data.locality}, ${data.principalSubdivision}`;
             } catch (error) {
-                return null;
+                return 'Location not specified';
             }
+        }
+
+        // Create masonry item element
+        function createMasonryItem(sticker) {
+            const item = document.createElement('div');
+            item.className = 'masonry-item';
+            
+            const uploadDate = new Date(sticker.created_at);
+            const timeAgo = Math.floor((new Date() - uploadDate) / (1000 * 60));
+            const timeDisplay = timeAgo < 60 ? `${timeAgo}m ago` : 
+                               timeAgo < 1440 ? `${Math.floor(timeAgo/60)}h ago` : 
+                               `${Math.floor(timeAgo/1440)}d ago`;
+            
+            item.innerHTML = `
+                <img src="${sticker.image_url}" alt="Street sticker" loading="lazy">
+                <div class="item-overlay">
+                    <div class="item-location">${sticker.location}</div>
+                    <div class="item-timestamp">${timeDisplay}</div>
+                </div>
+            `;
+            
+            return item;
+        }
+
+        // Render masonry gallery
+        function renderGallery() {
+            const gallery = document.getElementById('masonryGallery');
+            
+            if (currentData.length === 0) {
+                gallery.innerHTML = '<div class="loading">No documentation yet. Start the archive.</div>';
+                return;
+            }
+            
+            gallery.innerHTML = '';
+            currentData.forEach(sticker => {
+                gallery.appendChild(createMasonryItem(sticker));
+            });
         }
         
         // Auto-upload on file selection
@@ -218,19 +368,16 @@
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
             
-            // Show progress bar
             document.getElementById('progressBar').style.display = 'block';
-            document.getElementById('loading').style.display = 'block';
+            document.getElementById('uploadLoading').style.display = 'block';
             
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 
-                // Update progress
                 const progress = ((i + 0.5) / files.length) * 100;
                 document.getElementById('progressFill').style.width = progress + '%';
                 
                 try {
-                    // Try to get GPS location from image
                     let location = 'Location not specified';
                     const gpsData = await getGPSFromExif(file);
                     
@@ -241,7 +388,6 @@
                         }
                     }
                     
-                    // Upload image to Supabase Storage
                     const fileName = `${Date.now()}_${file.name}`;
                     const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('stickers')
@@ -249,43 +395,43 @@
                     
                     if (uploadError) throw uploadError;
                     
-                    // Get public URL
                     const { data: urlData } = supabase.storage
                         .from('stickers')
                         .getPublicUrl(fileName);
                     
-                    // Save metadata to database
-                    const { error: dbError } = await supabase
+                    const { data: insertData, error: dbError } = await supabase
                         .from('sticker_posts')
                         .insert({
                             image_url: urlData.publicUrl,
                             location: location,
                             created_at: new Date().toISOString(),
                             date: new Date().toLocaleDateString()
-                        });
+                        })
+                        .select()
+                        .single();
                     
                     if (dbError) throw dbError;
                     
-                    // Update progress to complete for this file
+                    // Add new item to beginning of array and re-render
+                    currentData.unshift(insertData);
+                    renderGallery();
+                    
                     const finalProgress = ((i + 1) / files.length) * 100;
                     document.getElementById('progressFill').style.width = finalProgress + '%';
                     
                 } catch (error) {
                     console.error('Upload failed:', error);
-                    alert(`Upload failed for ${file.name}: ${error.message}`);
+                    alert(`Documentation failed for ${file.name}: ${error.message}`);
                 }
             }
             
-            // Hide progress and reset
             setTimeout(() => {
                 document.getElementById('progressBar').style.display = 'none';
-                document.getElementById('loading').style.display = 'none';
+                document.getElementById('uploadLoading').style.display = 'none';
                 document.getElementById('progressFill').style.width = '0%';
             }, 500);
             
-            // Clear file input and reload gallery
             document.getElementById('fileInput').value = '';
-            loadStickers();
         });
         
         // Load all stickers
@@ -298,66 +444,48 @@
                 
                 if (error) throw error;
                 
-                // Update metadata with real data
-                const lastUpload = stickers.length > 0 ? stickers[0] : null;
-                updateMetadata(stickers.length, lastUpload);
-                
-                const gallery = document.getElementById('stickerGallery');
-                gallery.innerHTML = '';
-                
-                if (stickers.length === 0) {
-                    gallery.innerHTML = '<div class="loading">No stickers yet. Be the first to upload!</div>';
-                    return;
-                }
-                
-                stickers.forEach(sticker => {
-                    const stickerDiv = document.createElement('div');
-                    stickerDiv.className = 'sticker';
-                    stickerDiv.innerHTML = `
-                        <img src="${sticker.image_url}" alt="Sticker">
-                        <div class="location">
-                            ${sticker.location}
-                            <br>
-                            ${sticker.date}
-                        </div>
-                    `;
-                    gallery.appendChild(stickerDiv);
-                });
+                currentData = stickers;
+                renderGallery();
                 
             } catch (error) {
-                console.error('Error loading stickers:', error);
-                document.getElementById('stickerGallery').innerHTML = '<div class="loading">Error loading stickers.</div>';
-                updateMetadata(0, null);
+                console.error('Error loading documentation:', error);
+                document.getElementById('masonryGallery').innerHTML = '<div class="loading">Error loading archive.</div>';
             }
         }
         
-        // Drag and drop with auto-upload
-        const uploadArea = document.querySelector('.upload');
+        // Drag and drop functionality
+        const uploadZone = document.querySelector('.upload-zone');
         
-        uploadArea.addEventListener('dragover', (e) => {
+        uploadZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadArea.style.background = '#f0f0f0';
+            uploadZone.style.background = '#e8e8e8';
+            uploadZone.style.borderColor = '#000';
         });
         
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.style.background = 'white';
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.style.background = '#fafafa';
+            uploadZone.style.borderColor = '#333';
         });
         
-        uploadArea.addEventListener('drop', async (e) => {
+        uploadZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadArea.style.background = 'white';
+            uploadZone.style.background = '#fafafa';
+            uploadZone.style.borderColor = '#333';
             
             const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
             if (files.length === 0) return;
             
-            // Create a fake file input event to trigger the same upload process
-            const fakeEvent = { target: { files: files } };
-            document.getElementById('fileInput').dispatchEvent(new Event('change'));
+            // Trigger upload via file input
+            const fileInput = document.getElementById('fileInput');
+            const dt = new DataTransfer();
+            files.forEach(file => dt.items.add(file));
+            fileInput.files = dt.files;
+            fileInput.dispatchEvent(new Event('change'));
         });
         
-        // Load stickers on page load and initialize metadata
+        // Initialize
         loadStickers();
-        updateMetadata(); // Initialize with placeholder data
+        updateMetadata();
     </script>
 </body>
 </html>
