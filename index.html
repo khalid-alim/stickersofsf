@@ -6,7 +6,7 @@
     <title>Street Anthropology</title>
     <style>
         body {
-            font-family: "Times New Roman", serif;
+            font-family: "Segoe UI", sans-serif;
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
@@ -16,9 +16,12 @@
         }
         
         h1 {
+            font-family: "Consolas", "Monaco", monospace;
             font-size: 24px;
-            margin: 0 0 20px 0;
+            margin: 0;
             font-weight: normal;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
         
         .header {
@@ -31,7 +34,7 @@
         .metadata {
             font-size: 12px;
             color: #666;
-            font-family: "Courier New", monospace;
+            font-family: "Consolas", monospace;
             text-align: right;
             line-height: 1.3;
         }
@@ -42,6 +45,7 @@
             margin: 20px 0;
             text-align: center;
             cursor: pointer;
+            font-family: "Consolas", "Monaco", monospace;
         }
         
         .upload:hover {
@@ -72,12 +76,14 @@
         .location {
             font-size: 14px;
             margin-top: 10px;
+            font-family: "Consolas", "Monaco", monospace;
         }
         
         .loading {
             text-align: center;
             padding: 20px;
             font-style: italic;
+            font-family: "Consolas", "Monaco", monospace;
         }
         
         .progress-bar {
@@ -100,8 +106,8 @@
     <div class="header">
         <h1>Street Anthropology</h1>
         <div class="metadata" id="metadata">
-            Archive uptime: --d --h --m<br>
-            -- entries logged<br>
+            Archive uptime: --d --h --m --s<br>
+            Entries logged: --<br>
             Last update: --m ago, --
         </div>
     </div>
@@ -135,10 +141,10 @@
         
         const supabase = createClient(supabaseUrl, supabaseKey);
         
-        // Track when the archive started
-        const archiveStartTime = new Date('2025-08-28T21:00:00'); // August 28th, 2025 9:00 PM
+        // Track when the archive started - August 28th, 2025 at 9:00 PM
+        const archiveStartTime = new Date(2025, 7, 28, 21, 0, 0); // Month is 0-indexed
         
-        // Update metadata in real-time
+        // Update metadata in real-time with seconds
         function updateMetadata(totalCount = null, lastUpload = null) {
             const now = new Date();
             const timeDiff = now - archiveStartTime;
@@ -146,13 +152,14 @@
             const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
             
-            let metadataHTML = `Archive uptime: ${days}d ${hours}h ${minutes}m<br>`;
+            let metadataHTML = `Archive uptime: ${days}d ${hours}h ${minutes}m ${seconds}s<br>`;
             
             if (totalCount !== null) {
-                metadataHTML += `${totalCount} entries logged<br>`;
+                metadataHTML += `Entries logged: ${totalCount}<br>`;
             } else {
-                metadataHTML += `-- entries logged<br>`;
+                metadataHTML += `Entries logged: --<br>`;
             }
             
             if (lastUpload) {
@@ -167,8 +174,8 @@
             document.getElementById('metadata').innerHTML = metadataHTML;
         }
         
-        // Update metadata every minute
-        setInterval(() => updateMetadata(), 60000);
+        // Update metadata every second for live feel
+        setInterval(() => updateMetadata(), 1000);
         
         // Extract GPS coordinates from image EXIF data
         function getGPSFromExif(file) {
