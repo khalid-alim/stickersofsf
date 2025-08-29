@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SF Stickers</title>
+    <title>Street Anthropology</title>
     <style>
         body {
             font-family: "Times New Roman", serif;
@@ -19,6 +19,21 @@
             font-size: 24px;
             margin: 0 0 20px 0;
             font-weight: normal;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 20px;
+        }
+        
+        .metadata {
+            font-size: 12px;
+            color: #666;
+            font-family: "Courier New", monospace;
+            text-align: right;
+            line-height: 1.3;
         }
         
         .upload {
@@ -82,7 +97,14 @@
     </style>
 </head>
 <body>
-    <h1>San Francisco Sticker Archive</h1>
+    <div class="header">
+        <h1>Street Anthropology</h1>
+        <div class="metadata" id="metadata">
+            Archive running: --d --h --m<br>
+            147 specimens collected<br>
+            Last: 23m ago, Mission
+        </div>
+    </div>
     
     <p>Document stickers found around the city.</p>
     
@@ -112,6 +134,41 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpZmJ1Z2RvYWZ2eXd1cGR2cWJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MTM4ODAsImV4cCI6MjA3MTk4OTg4MH0.U4iGfgbQ6tLpWJUVRMls14cJjI3iJjbVE7smiCFAMck';
         
         const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        // Track when the archive started
+        const archiveStartTime = new Date('2024-08-25T10:00:00'); // Replace with actual start date
+        
+        // Update metadata in real-time
+        function updateMetadata(totalCount = null, lastUpload = null) {
+            const now = new Date();
+            const timeDiff = now - archiveStartTime;
+            
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            let metadataHTML = `Archive running: ${days}d ${hours}h ${minutes}m<br>`;
+            
+            if (totalCount !== null) {
+                metadataHTML += `${totalCount} specimens collected<br>`;
+            } else {
+                metadataHTML += `-- specimens collected<br>`;
+            }
+            
+            if (lastUpload) {
+                const uploadTime = new Date(lastUpload.created_at);
+                const timeSinceUpload = Math.floor((now - uploadTime) / (1000 * 60));
+                const location = lastUpload.location.split(',')[0]; // Just neighborhood part
+                metadataHTML += `Last: ${timeSinceUpload}m ago, ${location}`;
+            } else {
+                metadataHTML += `Last: --m ago, --`;
+            }
+            
+            document.getElementById('metadata').innerHTML = metadataHTML;
+        }
+        
+        // Update metadata every minute
+        setInterval(() => updateMetadata(), 60000);
         
         // Extract GPS coordinates from image EXIF data
         function getGPSFromExif(file) {
@@ -234,6 +291,10 @@
                 
                 if (error) throw error;
                 
+                // Update metadata with real data
+                const lastUpload = stickers.length > 0 ? stickers[0] : null;
+                updateMetadata(stickers.length, lastUpload);
+                
                 const gallery = document.getElementById('stickerGallery');
                 gallery.innerHTML = '';
                 
@@ -259,6 +320,7 @@
             } catch (error) {
                 console.error('Error loading stickers:', error);
                 document.getElementById('stickerGallery').innerHTML = '<div class="loading">Error loading stickers.</div>';
+                updateMetadata(0, null);
             }
         }
         
@@ -286,8 +348,9 @@
             document.getElementById('fileInput').dispatchEvent(new Event('change'));
         });
         
-        // Load stickers on page load
+        // Load stickers on page load and initialize metadata
         loadStickers();
+        updateMetadata(); // Initialize with placeholder data
     </script>
 </body>
 </html>
